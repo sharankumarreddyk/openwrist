@@ -11,8 +11,10 @@ implement each milestone against the physical watch.
 ## Ahead-of-hardware coding (board-agnostic, started)
 Work that doesn't need the watch in hand, being done during the restock wait:
 - ✅ Shared BLE contract — [`docs/PROTOCOL.md`](PROTOCOL.md)
-- 🚧 iOS companion app foundation — codec (tested), BLE manager, HealthKit
-  writer, status UI; **compiles** (`app/`). BLE verified once firmware exists.
+- ✅ iOS companion app — BLE manager, HealthKit writer, tabbed UI, **settings**
+  (config push), **weather** (Open-Meteo → watch), **TOTP authenticator**
+  (Keychain-backed, live codes). Builds; **8 XCTests pass** incl. RFC 6238.
+  BLE link verified once firmware exists.
 - ✅ Watch firmware board-agnostic core — `ble_ow` codec, RFC 6238 TOTP,
   pedometer; all host-tested (`make -C firmware test`).
 

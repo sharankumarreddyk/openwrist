@@ -1,8 +1,24 @@
 import SwiftUI
 
-struct ContentView: View {
+struct RootView: View {
+    @ObservedObject var services: Services
+
+    var body: some View {
+        TabView {
+            WatchView(state: services.state, ble: services.ble, weather: services.weather)
+                .tabItem { Label("Watch", systemImage: "applewatch") }
+            AuthView(store: services.auth)
+                .tabItem { Label("Auth", systemImage: "lock.shield") }
+            SettingsView(settings: services.settings, ble: services.ble)
+                .tabItem { Label("Settings", systemImage: "gearshape") }
+        }
+    }
+}
+
+struct WatchView: View {
     @ObservedObject var state: WatchState
     let ble: BLEManager
+    @ObservedObject var weather: WeatherService
 
     var body: some View {
         NavigationStack {
@@ -16,6 +32,7 @@ struct ContentView: View {
                     row("Steps", "\(state.steps)")
                     row("Active minutes", "\(state.activeMinutes)")
                 }
+                weatherSection
                 if let err = state.lastError {
                     Section { Text(err).foregroundStyle(.red) }
                 }
@@ -25,12 +42,23 @@ struct ContentView: View {
                     } else {
                         Button("Disconnect", role: .destructive) { ble.disconnect() }
                     }
-                    Button("Send test config (24h, 60% bright)") {
-                        ble.sendConfig(.init(use24h: true, brightness: 60, watchFaceId: 0))
-                    }
                 }
             }
             .navigationTitle("OpenWrist")
+        }
+    }
+
+    @ViewBuilder private var weatherSection: some View {
+        Section("Weather") {
+            if let w = weather.current {
+                row("Now", "\(Int(w.tempC.rounded()))°C · \(w.summary) · \(w.humidityPct)%")
+                Button("Push to watch") {
+                    if let p = weather.packet { ble.sendWeather(p) }
+                }
+            } else {
+                Button("Fetch weather") { Task { await weather.refresh() } }
+            }
+            if let e = weather.error { Text(e).foregroundStyle(.red).font(.footnote) }
         }
     }
 

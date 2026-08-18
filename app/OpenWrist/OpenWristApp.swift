@@ -4,6 +4,9 @@ import SwiftUI
 final class Services: ObservableObject {
     let state: WatchState
     let ble: BLEManager
+    let settings = SettingsStore()
+    let weather = WeatherService()
+    let auth = AuthStore()
     private let health: HealthKitManager
 
     init() {
@@ -26,7 +29,7 @@ struct OpenWristApp: App {
 
     var body: some Scene {
         WindowGroup {
-            ContentView(state: services.state, ble: services.ble)
+            RootView(services: services)
                 .onAppear { services.start() }
         }
     }

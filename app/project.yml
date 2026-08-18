@@ -24,3 +24,22 @@ targets:
         INFOPLIST_KEY_NSHealthShareUsageDescription: "OpenWrist reads step data to show your activity."
         INFOPLIST_KEY_NSHealthUpdateUsageDescription: "OpenWrist saves steps from your watch to Apple Health."
         CODE_SIGN_ENTITLEMENTS: OpenWrist/OpenWrist.entitlements
+  OpenWristTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - OpenWristTests
+    dependencies:
+      - target: OpenWrist
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        PRODUCT_BUNDLE_IDENTIFIER: com.openwrist.tests
+schemes:
+  OpenWrist:
+    build:
+      targets:
+        OpenWrist: all
+    test:
+      targets:
+        - OpenWristTests

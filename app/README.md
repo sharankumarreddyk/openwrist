@@ -3,9 +3,18 @@
 SwiftUI + CoreBluetooth + HealthKit. Sideloaded to your own iPhone with a free
 Apple ID. Implements the app side of the [BLE protocol](../docs/PROTOCOL.md).
 
-**Status:** foundation built and compiling (protocol codec, BLE manager,
-HealthKit writer, status UI). BLE needs a real watch to talk to — until then
-the UI runs and the codec is unit-tested.
+**Status:** builds and passes tests. Three tabs — **Watch** (status + steps +
+weather), **Auth** (a working TOTP authenticator), **Settings** (config push).
+BLE needs a real watch to talk to; everything else runs in the simulator now.
+
+Features implemented:
+- BLE manager (scan/connect/subscribe/write the `ble_ow` profile) + HealthKit step writer
+- Settings → pushes `Config` to the watch; persisted in UserDefaults
+- Weather via **Open-Meteo** (no API key) → pushes `Weather` to the watch
+- **TOTP authenticator** — add via `otpauth://` link or base32 key, live codes
+  with countdown; secrets stored in the **Keychain**. Works for Microsoft/
+  Google/GitHub/AWS accounts (code mode)
+- 8 XCTests (codec, RFC 6238 TOTP, base32, otpauth parse, WMO mapping)
 
 ## What's here
 
@@ -39,7 +48,13 @@ xcodebuild -project OpenWrist.xcodeproj -scheme OpenWrist \
   build CODE_SIGNING_ALLOWED=NO
 ```
 
-Run the codec self-test (no Xcode needed):
+Run the full test suite:
+```bash
+xcodebuild -project OpenWrist.xcodeproj -scheme OpenWrist \
+  -destination 'platform=iOS Simulator,name=iPhone 17' test CODE_SIGNING_ALLOWED=NO
+```
+
+Run just the codec self-test (no Xcode needed):
 ```bash
 swiftc OpenWrist/Protocol/Packets.swift Tests/ProtocolSelfTest.swift -o /tmp/owtest && /tmp/owtest
 ```
