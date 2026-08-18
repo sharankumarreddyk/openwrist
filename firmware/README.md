@@ -3,10 +3,27 @@
 ESP-IDF + ESP-Brookesia + LVGL for the LILYGO T-Watch S3 (ESP32-S3).
 The iOS companion app lives in [`../app/`](../app) (added at M5).
 
-> No source yet — implementation starts at **M1**, once the board is in hand.
-> Writing firmware for hardware you can't flash is untestable guesswork, so
-> this holds the setup path instead. Each milestone in
+> Board-specific code (display, touch, BLE stack) starts at **M1**, once the
+> board is in hand. But the **board-agnostic core is already written and
+> host-tested** — see below. Each milestone in
 > [`../docs/ROADMAP.md`](../docs/ROADMAP.md) lands its code here.
+
+## Board-agnostic core (`core/`) — done, host-tested
+
+Pure C, no ESP-IDF dependency, so it builds and runs on any machine:
+
+| File | What | Verified by |
+|------|------|-------------|
+| `core/ble_ow.*` | `ble_ow` packet codec (mirror of [PROTOCOL.md](../docs/PROTOCOL.md)) | same byte vectors as the app's Swift codec |
+| `core/totp.*` + `core/sha1.*` | RFC 6238 TOTP / HMAC-SHA1 / base32 (M9 2FA) | all 6 RFC 6238 Appendix-B vectors |
+| `core/pedometer.*` | step detection from accel magnitude (M6) | synthetic 2 Hz walk |
+
+Run the tests (no board, no ESP-IDF):
+```bash
+make -C firmware test
+```
+
+The ESP-IDF/LVGL/display layers wrap this core via the HAL when the board lands.
 
 ## One-time setup (when the board arrives)
 

@@ -13,7 +13,8 @@ Work that doesn't need the watch in hand, being done during the restock wait:
 - ✅ Shared BLE contract — [`docs/PROTOCOL.md`](PROTOCOL.md)
 - 🚧 iOS companion app foundation — codec (tested), BLE manager, HealthKit
   writer, status UI; **compiles** (`app/`). BLE verified once firmware exists.
-- ⬜ Watch firmware board-agnostic core (event loop, services, TOTP) — next.
+- ✅ Watch firmware board-agnostic core — `ble_ow` codec, RFC 6238 TOTP,
+  pedometer; all host-tested (`make -C firmware test`).
 
 ## M0 — Planning & scaffold ✅
 - ✅ Research (iPhone BLE services, prior art, hardware trade-offs, battery)
