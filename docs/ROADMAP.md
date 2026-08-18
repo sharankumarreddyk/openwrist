@@ -44,7 +44,7 @@ Goal: the whole reason this exists.
 
 ## M5 — Companion iOS app + OTA ⬜
 Goal: your own sideloaded app, and wireless upgrades.
-- SwiftUI + CoreBluetooth app connects to the watch's custom `ble_w1` profile
+- SwiftUI + CoreBluetooth app connects to the watch's custom `ble_ow` profile
 - **BLE-OTA:** push a new firmware `.bin` from the app to the watch
 - **WiFi-OTA** fallback: watch pulls a `.bin` over WiFi
 - *Test:* build a trivial firmware change and flash it wirelessly, no cable.

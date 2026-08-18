@@ -45,7 +45,7 @@ firmware/
       ble_ancs.*              # M2 notifications + call actions
       ble_cts.*               # M3 time sync
       ble_ams.*               # M4 music
-      ble_w1.*                # M5 custom profile <-> companion app
+      ble_ow.*                # M5 custom profile <-> companion app
       ble_hid.*               # M9 camera shutter / presenter remote
       totp.*                  # M9 2FA authenticator (RFC 6238)
       ota.*                   # M5 WiFi + BLE firmware update

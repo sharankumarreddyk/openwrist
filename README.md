@@ -1,4 +1,4 @@
-# W1 — an open ESP32 smartwatch for iPhone
+# OpenWrist — an open ESP32 smartwatch for iPhone
 
 A DIY smartwatch built on a LILYGO T-Watch S3 (ESP32-S3) that pairs with an
 iPhone over Bluetooth LE, backed by a **self-built iOS companion app** you

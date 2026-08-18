@@ -4,13 +4,13 @@
 
 ```
    ┌───────────────────────────┐      BLE (bonded)      ┌───────────────┐
-   │          iPhone           │◄──────────────────────►│      W1       │
+   │          iPhone           │◄──────────────────────►│   OpenWrist   │
    │                           │  ANCS  notifications   │  T-Watch S3   │
    │  iOS built-in services:   │  CTS   time sync       │  ESP32-S3     │
    │  ANCS · CTS · AMS         │  AMS   music control   │               │
    │                           │                        │               │
    │  ┌─────────────────────┐  │  custom BLE profile:   │               │
-   │  │ W1 companion app     │◄─┼───────────────────────┤               │
+   │  │ OpenWrist app        │◄─┼───────────────────────┤               │
    │  │ (you build+sideload) │  │  steps/HR → HealthKit  │               │
    │  │ SwiftUI · CoreBT ·   │  │  weather/config → watch│               │
    │  │ HealthKit            │  │  OTA trigger + push    │               │
@@ -39,7 +39,7 @@ WiFi is secondary and bursty (weather, NTP, WiFi-OTA) — never on continuously.
 │   • ble_ancs   notifications + call actions  │
 │   • ble_cts    time sync                     │
 │   • ble_ams    music info + control          │
-│   • ble_w1     custom profile ↔ companion app│
+│   • ble_ow     custom profile ↔ companion app│
 │   • ota        WiFi + BLE firmware update     │
 │   • wifi_svc   weather / NTP                  │
 │   • motion     step count, wrist-raise       │
@@ -54,7 +54,7 @@ WiFi is secondary and bursty (weather, NTP, WiFi-OTA) — never on continuously.
 
 SwiftUI + CoreBluetooth + HealthKit, sideloaded to your own iPhone with a free
 Apple ID (re-sign every ~7 days). Responsibilities:
-- Discover + connect to the watch's custom `ble_w1` GATT profile.
+- Discover + connect to the watch's custom `ble_ow` GATT profile.
 - Receive steps/HR/activity → write to **HealthKit**.
 - Send weather (from any weather API), config, and watch-face choices down.
 - Host firmware `.bin`s and push **BLE-OTA** updates; or tell the watch to
@@ -70,7 +70,7 @@ different watch) is a good structural model for the BLE + HealthKit plumbing.
 - Bonding: LE Secure Connections, stored in NVS. ANCS/AMS need encryption, so
   bonding completes before subscribing.
 - One connection carries iOS services (ANCS/CTS/AMS) **and** the custom
-  `ble_w1` profile.
+  `ble_ow` profile.
 
 ## Power {#power}
 

@@ -1,4 +1,4 @@
-# W1 companion iOS app
+# OpenWrist companion iOS app
 
 SwiftUI + CoreBluetooth + HealthKit. Sideloaded to your own iPhone with a free
 Apple ID (re-sign ~weekly). Built at **M5** — see
@@ -8,7 +8,7 @@ Apple ID (re-sign ~weekly). Built at **M5** — see
 
 ## What it does
 
-- Connects to the watch's custom `ble_w1` GATT profile.
+- Connects to the watch's custom `ble_ow` GATT profile.
 - Receives steps/HR/activity → writes to **Apple HealthKit**.
 - Sends weather, config, and watch-face settings down to the watch.
 - Hosts firmware `.bin`s and pushes **BLE-OTA** updates (or triggers WiFi-OTA).
