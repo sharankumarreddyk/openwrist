@@ -8,6 +8,13 @@ implement each milestone against the physical watch.
 ## Status legend
 ✅ done · 🚧 in progress · ⬜ not started · 🧪 experimental
 
+## Ahead-of-hardware coding (board-agnostic, started)
+Work that doesn't need the watch in hand, being done during the restock wait:
+- ✅ Shared BLE contract — [`docs/PROTOCOL.md`](PROTOCOL.md)
+- 🚧 iOS companion app foundation — codec (tested), BLE manager, HealthKit
+  writer, status UI; **compiles** (`app/`). BLE verified once firmware exists.
+- ⬜ Watch firmware board-agnostic core (event loop, services, TOTP) — next.
+
 ## M0 — Planning & scaffold ✅
 - ✅ Research (iPhone BLE services, prior art, hardware trade-offs, battery)
 - ✅ Constraint-driven board + framework decisions documented
