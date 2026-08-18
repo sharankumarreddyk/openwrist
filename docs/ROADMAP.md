@@ -61,7 +61,39 @@ Goal: your own sideloaded app, and wireless upgrades.
 - WiFi provisioning (BLE-provisioned creds → NVS)
 - *Test:* weather shows on the watch.
 
-## M8 — Polish ⬜
+## M9 — Free extras (no added hardware) ⬜
+Pure-firmware features using hardware the T-Watch S3 already has (touch LCD,
+IMU, mic, speaker, haptic, WiFi, BLE, RTC). Independent — build in any order.
+
+**Phone tricks (BLE):**
+- 📷 Camera shutter remote — watch advertises as a BLE HID keyboard and sends
+  Volume-Up to fire the iPhone camera. (Coexists with the companion-app role.)
+- 📵 Find my phone — watch → companion app → iPhone plays a loud sound.
+- 🎞️ Presenter remote — BLE HID page-up/down for slides.
+
+**Security:**
+- 🔐 TOTP 2FA authenticator (RFC 6238) — 6-digit codes on the wrist, offline.
+  Secrets in NVS, time from RTC/CTS. Works for any TOTP account, **including
+  Microsoft/Azure/365 accounts enrolled as "other authenticator app".**
+  Does NOT do push-approval / number-matching or passkeys (proprietary).
+
+**Fitness from the IMU (no HR sensor):**
+- Sleep tracking, fall detection, workout auto-detect, calorie estimate.
+- Tap / wrist-gesture controls.
+
+**WiFi widgets:**
+- World clock, stock/crypto/news tickers.
+- Smart-home remote (toggle lights / Home Assistant over HTTP/MQTT).
+  (Weather lives in M7.)
+
+**Utilities:**
+- Timer, stopwatch, multi-alarm (haptic + speaker), calculator, bubble level
+  (accelerometer), flashlight (white screen), currency/unit converter, a game.
+
+*Test each:* code triggers the iPhone camera; a TOTP code matches Google/MS
+Authenticator for the same secret; find-my-phone rings the phone.
+
+## M10 — Polish ⬜
 - Settings screen (brightness, faces, timeouts, WiFi)
 - Power tuning pass against measured battery life
 - Do-not-disturb / notification filtering

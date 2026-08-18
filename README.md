@@ -37,6 +37,14 @@ iOS app (free Apple ID, 7-day re-sign), it bridges what ANCS can't:
 - ⬆️ OTA updates over WiFi or BLE — upgrade the watch whenever you build something
 - 🔋 Multi-day battery (no always-on) — see below
 
+**Free extras** (no added hardware — pure firmware on parts already on the board):
+- 📷 Camera shutter remote for the iPhone (BLE HID) · 📵 find my phone · 🎞️ presenter remote
+- 🔐 TOTP 2FA authenticator — offline codes, works for Microsoft/Google/GitHub/AWS
+  accounts (code mode; not push-approval or passkeys)
+- 🏃 Sleep tracking, fall detection, workout auto-detect, gesture controls (IMU)
+- 🌐 World clock, stock/crypto/news tickers, smart-home remote (WiFi)
+- 🧰 Timer, stopwatch, alarms, calculator, bubble level, flashlight, converter, a game
+
 Health sensing is deliberately *secondary* — the focus is the phone-companion
 experience: notifications, time, music, glanceable info.
 
