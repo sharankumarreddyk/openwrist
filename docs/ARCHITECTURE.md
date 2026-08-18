@@ -3,96 +3,111 @@
 ## System view
 
 ```
-        ┌──────────────────────────┐         BLE (bonded)        ┌───────────────┐
-        │         iPhone           │◄───────────────────────────►│      W1       │
-        │                          │  ANCS  notifications/calls   │  ESP32-S3     │
-        │  iOS built-in services:  │  CTS   time sync             │  AMOLED watch │
-        │  ANCS · CTS · AMS        │  AMS   music info/control    │               │
-        └──────────────────────────┘                             └───────┬───────┘
-                                                                          │ WiFi (opt)
-                                                          weather · NTP · OTA updates
+   ┌───────────────────────────┐      BLE (bonded)      ┌───────────────┐
+   │          iPhone           │◄──────────────────────►│      W1       │
+   │                           │  ANCS  notifications   │  T-Watch S3   │
+   │  iOS built-in services:   │  CTS   time sync       │  ESP32-S3     │
+   │  ANCS · CTS · AMS         │  AMS   music control   │               │
+   │                           │                        │               │
+   │  ┌─────────────────────┐  │  custom BLE profile:   │               │
+   │  │ W1 companion app     │◄─┼───────────────────────┤               │
+   │  │ (you build+sideload) │  │  steps/HR → HealthKit  │               │
+   │  │ SwiftUI · CoreBT ·   │  │  weather/config → watch│               │
+   │  │ HealthKit            │  │  OTA trigger + push    │               │
+   │  └─────────────────────┘  │                        └───────┬───────┘
+   └───────────────────────────┘                                │ WiFi (opt)
+                                                    weather · NTP · WiFi-OTA
 ```
 
-The watch is a BLE **peripheral** that bonds once with the iPhone, then
-consumes iOS's ANCS/CTS/AMS as a **client**. WiFi is a secondary,
-occasionally-on channel for weather, NTP fallback, and OTA — never on
-continuously (it's the biggest battery drain).
+Two BLE relationships on one bonded link:
+1. **Watch as client of iOS** — consumes ANCS/CTS/AMS. Works even if the
+   companion app is closed.
+2. **Watch ↔ your companion app** — a custom GATT profile for things iOS
+   won't do natively: health data into HealthKit, config/weather down to the
+   watch, and OTA update triggering.
 
-## Firmware layers
+WiFi is secondary and bursty (weather, NTP, WiFi-OTA) — never on continuously.
+
+## Firmware layers (watch)
 
 ```
 ┌─────────────────────────────────────────────┐
-│  UI  — ESP-Brookesia + LVGL                  │  watch faces, notification cards,
-│        (screens, watch faces, app tiles)     │  music widget, settings
+│  UI  — ESP-Brookesia + LVGL                  │  watch faces, notif cards,
+│        (screens, faces, app tiles)           │  music widget, settings
 ├─────────────────────────────────────────────┤
-│  Services                                    │
+│  Services (FreeRTOS tasks → event queue)     │
 │   • ble_ancs   notifications + call actions  │
 │   • ble_cts    time sync                     │
-│   • ble_ams    media info + control          │
-│   • wifi_svc   weather / NTP / OTA           │
+│   • ble_ams    music info + control          │
+│   • ble_w1     custom profile ↔ companion app│
+│   • ota        WiFi + BLE firmware update     │
+│   • wifi_svc   weather / NTP                  │
 │   • motion     step count, wrist-raise       │
 │   • power_mgr  sleep states, wake sources    │
 ├─────────────────────────────────────────────┤
-│  HAL — ESP-IDF BSP for the board             │  display QSPI, touch, IMU, RTC,
-│        (display, touch, IMU, RTC, PMIC)      │  PMIC/battery, vibration
+│  HAL — ESP-IDF BSP for T-Watch S3            │  ST7789 display, touch,
+│        (display, touch, BMA423 IMU, PMIC)    │  BMA423, PMIC/charger, audio
 └─────────────────────────────────────────────┘
 ```
 
-Each service is an independent FreeRTOS task posting events onto a queue the
-UI consumes. Keeps BLE/sensor timing off the render loop.
+## Companion iOS app
+
+SwiftUI + CoreBluetooth + HealthKit, sideloaded to your own iPhone with a free
+Apple ID (re-sign every ~7 days). Responsibilities:
+- Discover + connect to the watch's custom `ble_w1` GATT profile.
+- Receive steps/HR/activity → write to **HealthKit**.
+- Send weather (from any weather API), config, and watch-face choices down.
+- Host firmware `.bin`s and push **BLE-OTA** updates; or tell the watch to
+  pull a **WiFi-OTA** update.
+
+Reference: `InfiniTimeOrg/InfiniLink` (open-source iOS companion for a
+different watch) is a good structural model for the BLE + HealthKit plumbing.
 
 ## BLE design
 
-- Role: **peripheral**, advertising the ANCS solicitation UUID so iOS
-  auto-reconnects after a drop.
-- Bonding: LE Secure Connections; store the bond in NVS so re-pairing survives
-  reboots. ANCS/AMS characteristics require encryption, so bonding must
-  complete before subscribing.
-- One connection carries all three services. Subscribe to ANCS Notification
-  Source + Data Source, CTS, and AMS entity-update characteristics.
-- Reference: ESP-IDF `ble_ancs` example (Bluedroid/NimBLE).
+- Watch role: **peripheral**, advertising the ANCS solicitation UUID so iOS
+  auto-reconnects after a drop; the companion app connects to the same device.
+- Bonding: LE Secure Connections, stored in NVS. ANCS/AMS need encryption, so
+  bonding completes before subscribing.
+- One connection carries iOS services (ANCS/CTS/AMS) **and** the custom
+  `ble_w1` profile.
 
 ## Power {#power}
 
-The single most important design axis. "Always-on" is implemented as a
-*low-power dim clock*, not a live full-brightness UI.
-
-**States:**
+**No always-on** (your call — and the right one for battery). The display is
+off between interactions; the watch wakes on wrist-raise or touch.
 
 | State | CPU | Display | BLE | Rough draw |
 |-------|-----|---------|-----|-----------|
-| Active UI | 240 MHz | full brightness | connected | 100–240 mA |
-| Always-on (dim) | light sleep, tick on RTC | dim, mostly-black clock | connected, low duty | tens of mA |
-| Idle/sleep | light sleep | off | connected, low duty | single-digit mA |
+| Active UI | full | on | connected | 100–240 mA |
+| Idle (screen off) | light sleep | off | connected, low duty | single-digit mA |
 | Deep sleep | off (RTC only) | off | disconnected | 10–150 µA |
 
 **Transitions:**
 - Wrist-raise (IMU) or touch → Active UI.
-- Timeout with wrist down → Always-on dim, then Idle.
-- Long inactivity / very low battery → Deep sleep (RTC keeps time; wakes on
-  IMU tap or button).
+- Inactivity timeout → screen off, light sleep, BLE stays connected (so
+  notifications still arrive and buzz).
+- Long inactivity / very low battery → deep sleep; wakes on IMU tap or button.
 
 **Rules that keep it alive:**
-- WiFi is off except during an explicit weather/OTA/NTP burst.
+- WiFi off except during an explicit weather/OTA/NTP burst.
 - BLE connection interval widened when idle (fewer radio wakeups).
-- AMOLED always-on face is mostly black by design (AMOLED draws ~0 on black).
-- Brightness auto-dims; no animations in the always-on state.
+- No animations or polling while the screen is off.
 
-Honest targets: ~2–3 days tilt-to-wake, ~1 day always-on-dim. See
-[`RESEARCH.md`](RESEARCH.md#3-battery--always-on--what-the-research-says).
-
-<!-- ponytail: power states are the ceiling here; if a day of always-on isn't
-     enough, the upgrade path is the T-Watch Ultra's 1100mAh cell, not code. -->
+Realistic target: **multiple days** on a charge with normal notification
+traffic. It's still an ESP32 with WiFi — days, not the weeks an nRF52 gives.
 
 ## Data & storage
 
 - **NVS** — BLE bond, settings, watch-face choice, WiFi creds, step history.
-- No filesystem/db needed for v1. Add LittleFS only if watch faces ship as
-  loadable assets later. (YAGNI until then.)
+- No filesystem/db for v1. Add LittleFS only if faces ship as loadable assets
+  later. (YAGNI until then.)
 
-## What's intentionally out of scope for v1
+## Out of scope for v1
 
-- Apple Health sync (needs a companion iOS app — HealthKit is app-only).
-- Optical heart rate (not on the board; unreliable on wrist).
-- On-watch app store / third-party apps (ESP-Brookesia supports an app model;
-  defer until the core companion experience is solid).
+- Optical heart rate (not on this board; unreliable on wrist).
+- On-watch third-party app store (ESP-Brookesia supports it; defer until the
+  core companion experience is solid).
+
+<!-- ponytail: HealthKit sync moved IN scope once a companion app was on the
+     table — it's the only way steps/HR reach Apple Health. -->

@@ -42,13 +42,13 @@ now-playing metadata (title, artist, album, playback state) and send remote
 commands (play, pause, next, previous, volume). Turns the wrist into a media
 remote.
 
-### What iOS will NOT give you
-- **Writing health data into Apple Health** — impossible without a companion
-  iOS app (HealthKit is app-only). Steps/HR the watch computes stay on the
-  watch, or need an optional companion app later. Out of scope for v1.
-- **Reliable long-lived background BLE** without the phone initiating — the
-  watch must be the one holding the connection as a peripheral advertising
-  the "Solicited ANCS" UUID so iOS reconnects it.
+### What needs the companion app (not ANCS)
+- **Writing health data into Apple Health** — HealthKit is app-only. Solved by
+  the self-built companion app (see §5). Steps/HR flow watch → app → HealthKit.
+- **Weather, config, watch-face settings down to the watch** — a custom GATT
+  profile between watch and companion app carries these.
+- **Reliable long-lived background BLE** — the watch holds the connection as a
+  peripheral advertising the "Solicited ANCS" UUID so iOS reconnects it.
 
 ## 2. Prior art surveyed (open-source, for reference only)
 
@@ -104,6 +104,49 @@ implementations to learn from.
 Arduino + LVGL remains a documented fallback for faster first-light if ESP-IDF
 onboarding stalls (see `Melaja/ESP32-S3-Smartwatch`).
 
+## 5. Hardware selection — how the constraints decided it
+
+Chip candidates for a BLE smartwatch:
+
+| Chip | BLE/power | WiFi | Notes |
+|------|-----------|------|-------|
+| **nRF52832** (PineTime) | Best — years on a coin cell; ~2 µA sleep | No | Cheapest ($27), sealed IP67, HR onboard, mature InfiniTime firmware |
+| **nRF52840** | Best — ~2 µA sleep, BLE 5.3 | No | More flash/RAM than 52832; bare dev boards only |
+| **ESP32-S3** | Good — days on Li-po; WiFi is the drain | Yes | More CPU/RAM, WiFi+BLE, huge ecosystem |
+
+On raw battery, nRF52 wins by a wide margin (~10× lower BLE current). So why
+**ESP32-S3 / LILYGO T-Watch S3**? Because the *user's* constraints outrank raw
+battery:
+
+1. **USB-C or wireless charging.** PineTime charges only via a proprietary
+   magnetic pogo dock — no USB-C, no Qi. The T-Watch S3 charges over USB-C.
+2. **Parts available in India.** Robu.in is LILYGO's official India
+   distributor — no import/customs friction. PineTime is import-only
+   (Fab.To.Lab), pricier and slower.
+3. **WiFi + BLE.** Enables WiFi-OTA and direct weather without the phone.
+4. **No always-on required** → the ESP32's weaker battery is no longer the
+   dealbreaker it would be for an always-on design; multi-day is fine.
+
+Net: nRF52 is the battery-optimal chip, but T-Watch S3 is the
+constraint-optimal *product*. The nRF52 respin stays in the backlog if
+battery-weeks ever outrank WiFi + India convenience.
+
+Wireless charging: no DIY watch ships Qi. It's an add-on — a BQ51013B-class Qi
+receiver coil (Robu.in/Adafruit) wired to the battery. Documented as an
+optional mod, not a v1 requirement.
+
+## 6. iOS companion app + sideloading
+
+The user builds and installs their own iOS app without a paid Apple Developer
+account by **sideloading** onto their own device: a free Apple ID issues a
+7-day signing certificate (re-sign weekly via Xcode or tools like Sideloadly/
+SideStore). This unlocks HealthKit, CoreBluetooth, and a custom BLE profile —
+everything ANCS can't do.
+
+Structural reference: `InfiniTimeOrg/InfiniLink`, the open-source iOS
+companion for InfiniTime, already does BLE connect + HealthKit + Apple Music
+control + step charts. Good model for the plumbing (not a dependency).
+
 ## Sources
 
 - [Bellafaire/ESP32-Smart-Watch](https://github.com/Bellafaire/ESP32-Smart-Watch)
@@ -120,3 +163,11 @@ onboarding stalls (see `Melaja/ESP32-S3-Smartwatch`).
 - [ESP32-S3-Touch-AMOLED-2.06 — Waveshare](https://www.waveshare.com/esp32-s3-touch-amoled-2.06.htm)
 - [How to Achieve 2-Year Battery Life with ESP32 — Hubble](https://hubble.com/community/guides/how-to-achieve-2-year-battery-life-with-esp32/)
 - [LILYGO T-Watch Ultra — CNX Software](https://www.cnx-software.com/2026/04/20/lilygo-t-watch-ultra-an-ip65-rated-esp32-s3-smartwatch-with-2-01-inch-amoled-lora-and-gnss/)
+- [PineTime — PINE64](https://pine64.org/devices/pinetime/)
+- [PineTime in India — Fab.To.Lab](https://www.fabtolab.com/pine64-pinetime-open-source-smartwatch)
+- [nRF52840 vs ESP32 BLE for wearables — Zbotic](https://zbotic.in/nrf52840-vs-esp32-ble-5-0-module-comparison-for-wearables/)
+- [LILYGO T-Watch S3 — official product page](https://lilygo.cc/products/t-watch-s3)
+- [LILYGO at Robu.in (India distributor)](https://robu.in/brand/lilygo/)
+- [InfiniLink — iOS companion for InfiniTime](https://github.com/InfiniTimeOrg/InfiniLink)
+- [Sideloadly — free iOS sideloading](https://sideloadly.io/)
+- [Qi wireless receiver module — Adafruit](https://www.adafruit.com/product/1901)

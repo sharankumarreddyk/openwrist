@@ -1,52 +1,73 @@
 # Hardware
 
-## Recommended board — Waveshare ESP32-S3-Touch-AMOLED-2.06 (~$45)
+## Recommended board — LILYGO T-Watch S3 (ESP32-S3)
 
-Watch-shaped development board, ships with a strap. Everything the firmware
-needs is already on it, so this project is **firmware-only** — no soldering,
-no PCB, no case CAD.
+Watch-shaped, ships with a strap and case. Firmware-only project — no
+soldering or PCB required for v1. Chosen because it satisfies every hard
+constraint: **USB-C charging, OTA software upgrades, and official
+availability in India.**
 
 | Part | Spec |
 |------|------|
-| MCU | ESP32-S3R8 — dual-core LX7 @ up to 240 MHz, WiFi + BLE 5 |
+| MCU | ESP32-S3 — dual-core LX7, WiFi 802.11 b/g/n + BLE 5 |
 | Memory | 8 MB PSRAM, 16 MB flash |
-| Display | 2.06" AMOLED, 410×502, QSPI interface |
-| Touch | Capacitive |
-| Motion | 6-axis IMU (accel + gyro) — steps, wrist-raise |
-| Clock | Hardware RTC (keeps time in deep sleep) |
-| Power | Onboard PMIC + Li-po charger, battery connector |
-| Audio | Dual digital mic array + codec |
-| Wearable | Watch-shaped enclosure + strap |
+| Display | 1.54" capacitive touch LCD (ST7789), 240×240 |
+| Motion | BMA423 accelerometer — steps, wrist-raise |
+| Audio | MAX98357A amp + speaker, microphone |
+| Radio | WiFi + BLE (+ LoRa on the LoRa variant — ignore for a watch) |
+| Charging | **USB-C** (also the flashing port) |
+| Wearable | Watch case + strap |
 
-### Why AMOLED, not the popular LILYGO T-Watch S3
+### Where to buy (India)
+- **Robu.in** — official LILYGO distributor in India. Search "LILYGO T-Watch S3".
+- Get the **plain T-Watch S3** (not specifically the LoRa/US915 variant — LoRa
+  is dead weight for a watch, though it doesn't hurt if that's what's in stock).
 
-The T-Watch S3 has a bigger community, but it uses an **LCD**. An LCD backlight
-is all-or-nothing, so an "always-on" face burns full backlight power. AMOLED
-lights pixels individually and draws ~zero on black — an always-on face that's
-mostly black costs a fraction of the power. Since always-on is a hard
-requirement, AMOLED wins.
+> Confirm the exact charge port and battery size on the live product page before
+> buying — LILYGO revises variants. USB-C is standard on the S3 line.
 
-## Alternatives (if you'd rather)
+## Charging
 
-| Board | Trade-off |
-|-------|-----------|
-| **LILYGO T-Watch S3** (~$40) | Best community + case, most reference firmware. LCD, so worse always-on battery. Solid if always-on matters less than ecosystem. |
-| **LILYGO T-Watch Ultra** (~$$) | 2.01" AMOLED, big 1100 mAh battery, IP65, LoRa/GNSS. Best battery + water resistance, pricier and newer (less reference firmware). |
+- **Primary: USB-C.** Charges and flashes over the same port. Done.
+- **Optional wireless (Qi):** no DIY watch has Qi built in. To add it, wire a
+  Qi **receiver coil module** (e.g. BQ51013B-based, sold on Robu.in/Adafruit)
+  to the battery input and stick the coil on the back. Adds thickness. Treat
+  as a later mod, not a v1 requirement.
 
-## What to buy
+## Software upgrades (OTA)
 
-1. The board above (with strap).
-2. A USB-C cable (flashing + charging) — likely already have one.
-3. Optional later: a small Li-po if you want to swap the included cell for
-   more capacity (check the connector + PMIC limits first).
+ESP32 supports Over-The-Air firmware updates over **WiFi or BLE**. So every
+time you build something new, you push it wirelessly — no cable needed after
+the first flash. Two paths, both documented at milestone M6:
+- **WiFi OTA** — watch pulls a new `.bin` from your Mac/laptop on the same network.
+- **BLE OTA** — your companion iOS app pushes the update over Bluetooth.
 
-That's the entire bill of materials. No breadboard, no jumper wires, no
-external sensors for v1 — health uses the onboard IMU.
+The very first flash is over USB-C; everything after can be wireless.
 
-## Things the board does NOT solve
+## Why not the alternatives
 
-- **Optical heart rate** — not onboard. Adding a MAX30102 later means wiring +
-  a hole in the case; and wrist optical HR on ESP32 is unreliable regardless.
-  Deferred, marked experimental.
-- **Waterproofing** — the Waveshare enclosure is not rated. Don't shower with
-  it. The T-Watch Ultra is the IP65 option if that matters.
+| Board | Why not (for your constraints) |
+|-------|-------------------------------|
+| **PineTime (nRF52)** | Best battery + cheapest, BUT charges via a proprietary magnetic dock (no USB-C, no Qi) and is import-only in India. Fails charging + sourcing. |
+| **Waveshare ESP32-S3 AMOLED 2.06** | Nicer AMOLED, but you dropped always-on (AMOLED's main edge) and it's less watch-complete than the T-Watch. Fine as a second choice; also on Robu.in. |
+| **nRF52840 bare board (XIAO/Feather)** | Best battery + BLE, on Robu.in, but it's a bare board — you assemble display, case, battery, charging yourself. Most hardware fuss. |
+
+If battery life ever becomes the top priority over WiFi/India-convenience,
+the nRF52 path is the upgrade — but it's a bigger hardware project.
+
+## Bill of materials (v1)
+
+1. LILYGO T-Watch S3 (with strap) — Robu.in.
+2. A USB-C cable — probably already have one.
+3. *Optional later:* Qi receiver coil module + a larger Li-po (check the
+   connector/PMIC limits first).
+
+No breadboard, no external sensors for v1 — motion/health use the onboard IMU.
+
+## Not solved by this board
+
+- **Optical heart rate** — the T-Watch S3 has no HR sensor. Adding a MAX30102
+  means wiring + a case hole, and wrist optical HR on ESP32 is unreliable.
+  Deferred, experimental. (PineTime *does* have HR onboard — a trade-off you
+  accepted for USB-C + India sourcing.)
+- **Waterproofing** — not rated. Don't swim with it.

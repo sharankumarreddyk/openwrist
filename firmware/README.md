@@ -1,6 +1,7 @@
 # Firmware
 
-ESP-IDF + ESP-Brookesia + LVGL for the Waveshare ESP32-S3-Touch-AMOLED-2.06.
+ESP-IDF + ESP-Brookesia + LVGL for the LILYGO T-Watch S3 (ESP32-S3).
+The iOS companion app lives in [`../app/`](../app) (added at M5).
 
 > No source yet — implementation starts at **M1**, once the board is in hand.
 > Writing firmware for hardware you can't flash is untestable guesswork, so
@@ -18,10 +19,11 @@ ESP-IDF + ESP-Brookesia + LVGL for the Waveshare ESP32-S3-Touch-AMOLED-2.06.
    ```
 
 2. **Start from the board + framework references** (copy, then trim to ours):
-   - Board BSP + demos: Waveshare ESP32-S3-Touch-AMOLED-2.06 wiki/demo.
+   - Board BSP + examples: LILYGO T-Watch S3 repo (`Xinyuan-LilyGO/T-Watch-Deps`
+     / `LilyGO/TTGO_TWatch_Library`) for display, touch, BMA423, PMIC pins.
    - UI framework: `espressif/esp-brookesia` (has a smartwatch example).
    - ANCS client: `esp-idf/examples/bluetooth/bluedroid/ble/ble_ancs`.
-   - Closest full reference for this exact board: `joaquimorg/OLEDS3Watch`.
+   - OTA: `esp-idf/examples/system/ota` (WiFi) + a BLE-OTA example for the app path.
 
 3. **Build / flash / monitor:**
    ```bash
@@ -43,9 +45,11 @@ firmware/
       ble_ancs.*              # M2 notifications + call actions
       ble_cts.*               # M3 time sync
       ble_ams.*               # M4 music
-      wifi_svc.*              # M6 weather / NTP / OTA
-      motion.*                # M5 steps / wrist-raise
-      power_mgr.*             # sleep states, wake sources
+      ble_w1.*                # M5 custom profile <-> companion app
+      ota.*                   # M5 WiFi + BLE firmware update
+      wifi_svc.*              # M7 weather / NTP
+      motion.*                # M6 steps / wrist-raise
+      power_mgr.*             # tap/tilt-to-wake, sleep states
     hal/                      # board BSP glue (display, touch, IMU, RTC, PMIC)
   components/                 # esp-brookesia, lvgl, board BSP (managed deps)
 ```
