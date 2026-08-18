@@ -7,6 +7,18 @@ soldering or PCB required for v1. Chosen because it satisfies every hard
 constraint: **USB-C charging, OTA software upgrades, and official
 availability in India.**
 
+> **Status (buying): awaiting restock.** Both ready-made watch boards below are
+> currently out of stock in India (checked Robu.in + Amazon.in, Aug 2026).
+> Plan is to buy **whichever restocks first** — the firmware is identical, only
+> the display/IMU HAL differs. Target = either:
+> - **LILYGO T-Watch S3** (LCD) — Robu.in
+> - **Waveshare ESP32-S3-Touch-AMOLED-2.06** (AMOLED, w/ battery) — Robu.in / Amazon.in
+>
+> **Bare display boards (e.g. Waveshare 1.69" Touch LCD, ~₹3,995 in stock) are
+> ruled out** — they have no case, and the only case option is a 3D print (no
+> printer available). Straps are a non-issue: any standard 20/22mm spring-bar
+> strap fits a cased watch board.
+
 | Part | Spec |
 |------|------|
 | MCU | ESP32-S3 — dual-core LX7, WiFi 802.11 b/g/n + BLE 5 |

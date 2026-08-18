@@ -12,7 +12,8 @@ implement each milestone against the physical watch.
 - ✅ Research (iPhone BLE services, prior art, hardware trade-offs, battery)
 - ✅ Constraint-driven board + framework decisions documented
 - ✅ Repo, docs, license
-- ⬜ Order the LILYGO T-Watch S3 (Robu.in)
+- ⬜ Buy a ready-made watch board — **awaiting restock** of the LILYGO T-Watch
+  S3 or Waveshare AMOLED 2.06 (both out of stock in India, Aug 2026)
 
 ## M1 — First light ⬜
 Goal: flash the board over USB-C, prove the toolchain, draw something.
@@ -108,5 +109,6 @@ Authenticator for the same secret; find-my-phone rings the phone.
 ---
 
 ### Next action
-Order the LILYGO T-Watch S3 (see [`HARDWARE.md`](HARDWARE.md)). Once in hand,
-start M1 — the `firmware/` directory holds the scaffold and setup notes.
+**Awaiting restock** of a ready-made watch board (LILYGO T-Watch S3 or Waveshare
+AMOLED 2.06 — see [`HARDWARE.md`](HARDWARE.md)). Once one is in hand, start M1 —
+the `firmware/` directory holds the scaffold and setup notes.
