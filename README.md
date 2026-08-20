@@ -15,6 +15,11 @@ wireless firmware updates.
 > bring-up (display, sensors, the BLE stack) begins once a board is in hand.
 > See [`docs/ROADMAP.md`](docs/ROADMAP.md).
 
+<p align="center">
+  <img src="assets/ui-concept.gif" alt="OpenWrist watch-face UI concept — time, notification, music, steps" width="300">
+</p>
+<p align="center"><sub><b>UI concept</b> — design mockup of the watch faces (time · ANCS notification · AMS music · steps). Not a firmware screenshot; on-device UI lands with hardware bring-up.</sub></p>
+
 ## Why it works
 
 **Core features need no app** — iOS exposes three standard BLE services that any
