@@ -7,7 +7,7 @@ that would otherwise cost weeks.
 ## 1. iPhone integration — the core problem, and its solution
 
 iOS does not let arbitrary Bluetooth devices push data into it, and it will
-not run your app in the background for long. But Apple publishes three GATT
+not run a third-party app in the background for long. But Apple publishes three GATT
 services that any **bonded** BLE device may act as a client of, with zero app
 involvement. This is exactly how the Pebble and every cheap fitness band talk
 to an iPhone.
@@ -18,7 +18,7 @@ Service UUID `7905F431-B5CE-4E99-A40F-4B1E122D00D0`. Three characteristics:
 - **Notification Source** (notify) — fires on every add/modify/remove of a
   notification. Gives a 8-byte packet: event ID, flags, category (call,
   message, email, …), and a 4-byte notification UID.
-- **Control Point** (write) — you write a "Get Notification Attributes"
+- **Control Point** (write) — the client writes a "Get Notification Attributes"
   command with the UID to request the app identifier, title, subtitle, and
   message body.
 - **Data Source** (notify) — the attribute data streams back here.
@@ -55,15 +55,15 @@ remote.
 These informed the architecture. None are dependencies; they're reference
 implementations to learn from.
 
-**Firmware for this exact board (Waveshare AMOLED 2.06):**
+**Firmware for ESP32-S3 watch boards:**
 - `joaquimorg/OLEDS3Watch` — smartwatch firmware using ESP-Brookesia. Closest
-  reference for our stack.
-- `Melaja/ESP32-S3-Smartwatch` — Arduino + LVGL + Arduino_GFX build for the
-  same board. Good fallback reference if we ever drop to Arduino.
+  reference for the ESP-IDF stack.
+- `Melaja/ESP32-S3-Smartwatch` — Arduino + LVGL + Arduino_GFX build. Arduino
+  fallback reference.
 
 **Watch OSes / frameworks:**
 - `espressif/esp-brookesia` — Espressif's official HMI framework; ships a
-  smartwatch demo. This is our UI foundation.
+  smartwatch demo. The UI foundation.
 - Open-SmartWatch (`open-smartwatch`) — mature OSW project, hardware + OS +
   3D-printed cases. Great for watch-face and app-model ideas.
 - `OpenTimeWatch-Project/OpenTimeWatch-OS` — app/watchface/widget model ideas.
@@ -95,7 +95,7 @@ implementations to learn from.
 
 **ESP-IDF + ESP-Brookesia + LVGL**, not Arduino, because:
 1. ANCS/AMS/CTS need fine BLE control — ESP-IDF's NimBLE/Bluedroid ANCS
-   example is the reference; Arduino BLE wrappers fight you here.
+   example is the reference; Arduino BLE wrappers are limiting here.
 2. Real power management (light/deep sleep, RTC wake sources, per-peripheral
    power domains) needs ESP-IDF.
 3. ESP-Brookesia is Espressif's supported smartwatch UI framework with a demo
@@ -104,44 +104,37 @@ implementations to learn from.
 Arduino + LVGL remains a documented fallback for faster first-light if ESP-IDF
 onboarding stalls (see `Melaja/ESP32-S3-Smartwatch`).
 
-## 5. Hardware selection — how the constraints decided it
+## 5. Hardware selection rationale
 
 Chip candidates for a BLE smartwatch:
 
 | Chip | BLE/power | WiFi | Notes |
 |------|-----------|------|-------|
-| **nRF52832** (PineTime) | Best — years on a coin cell; ~2 µA sleep | No | Cheapest ($27), sealed IP67, HR onboard, mature InfiniTime firmware |
+| **nRF52832** (PineTime) | Best — years on a coin cell; ~2 µA sleep | No | Cheap, sealed IP67, HR onboard, mature InfiniTime firmware |
 | **nRF52840** | Best — ~2 µA sleep, BLE 5.3 | No | More flash/RAM than 52832; bare dev boards only |
 | **ESP32-S3** | Good — days on Li-po; WiFi is the drain | Yes | More CPU/RAM, WiFi+BLE, huge ecosystem |
 
-On raw battery, nRF52 wins by a wide margin (~10× lower BLE current). So why
-**ESP32-S3 / LILYGO T-Watch S3**? Because the *user's* constraints outrank raw
-battery:
+On raw battery the nRF52 wins by a wide margin (~10× lower BLE current).
+OpenWrist targets **ESP32-S3** regardless, for these reasons:
 
-1. **USB-C or wireless charging.** PineTime charges only via a proprietary
-   magnetic pogo dock — no USB-C, no Qi. The T-Watch S3 charges over USB-C.
-2. **Parts available in India.** Robu.in is LILYGO's official India
-   distributor — no import/customs friction. PineTime is import-only
-   (Fab.To.Lab), pricier and slower.
-3. **WiFi + BLE.** Enables WiFi-OTA and direct weather without the phone.
-4. **No always-on required** → the ESP32's weaker battery is no longer the
-   dealbreaker it would be for an always-on design; multi-day is fine.
+1. **USB-C charging** on common watch boards (T-Watch S3, Waveshare 2.06),
+   versus PineTime's proprietary magnetic dock.
+2. **WiFi + BLE** — enables WiFi-OTA and direct weather without the phone.
+3. **Mature ESP-IDF + ESP-Brookesia** tooling and a large board ecosystem.
+4. **No always-on requirement** makes the ESP32's shorter battery life
+   acceptable (multi-day with sleep tuning).
 
-Net: nRF52 is the battery-optimal chip, but T-Watch S3 is the
-constraint-optimal *product*. The nRF52 respin stays in the backlog if
-battery-weeks ever outrank WiFi + India convenience.
-
-Wireless charging: no DIY watch ships Qi. It's an add-on — a BQ51013B-class Qi
-receiver coil (Robu.in/Adafruit) wired to the battery. Documented as an
-optional mod, not a v1 requirement.
+The nRF52 family remains the battery-optimal silicon and is a reasonable fork
+target for a WiFi-free, longest-battery build; it is out of scope for this
+firmware. Wireless charging is not built into the reference boards — it can be
+added with a BQ51013B-class receiver coil wired to the battery (optional mod).
 
 ## 6. iOS companion app + sideloading
 
-The user builds and installs their own iOS app without a paid Apple Developer
-account by **sideloading** onto their own device: a free Apple ID issues a
-7-day signing certificate (re-sign weekly via Xcode or tools like Sideloadly/
-SideStore). This unlocks HealthKit, CoreBluetooth, and a custom BLE profile —
-everything ANCS can't do.
+The companion app installs without a paid Apple Developer account by
+**sideloading**: a free Apple ID issues a 7-day signing certificate (renewed
+via Xcode or tools like Sideloadly / SideStore). This unlocks HealthKit,
+CoreBluetooth, and a custom BLE profile — everything ANCS can't do.
 
 Structural reference: `InfiniTimeOrg/InfiniLink`, the open-source iOS
 companion for InfiniTime, already does BLE connect + HealthKit + Apple Music
@@ -164,10 +157,8 @@ control + step charts. Good model for the plumbing (not a dependency).
 - [How to Achieve 2-Year Battery Life with ESP32 — Hubble](https://hubble.com/community/guides/how-to-achieve-2-year-battery-life-with-esp32/)
 - [LILYGO T-Watch Ultra — CNX Software](https://www.cnx-software.com/2026/04/20/lilygo-t-watch-ultra-an-ip65-rated-esp32-s3-smartwatch-with-2-01-inch-amoled-lora-and-gnss/)
 - [PineTime — PINE64](https://pine64.org/devices/pinetime/)
-- [PineTime in India — Fab.To.Lab](https://www.fabtolab.com/pine64-pinetime-open-source-smartwatch)
 - [nRF52840 vs ESP32 BLE for wearables — Zbotic](https://zbotic.in/nrf52840-vs-esp32-ble-5-0-module-comparison-for-wearables/)
 - [LILYGO T-Watch S3 — official product page](https://lilygo.cc/products/t-watch-s3)
-- [LILYGO at Robu.in (India distributor)](https://robu.in/brand/lilygo/)
 - [InfiniLink — iOS companion for InfiniTime](https://github.com/InfiniTimeOrg/InfiniLink)
 - [Sideloadly — free iOS sideloading](https://sideloadly.io/)
 - [Qi wireless receiver module — Adafruit](https://www.adafruit.com/product/1901)

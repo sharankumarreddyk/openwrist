@@ -1,15 +1,14 @@
 # Roadmap
 
 Milestones are ordered so each is independently useful and testable on real
-hardware. **Nothing past M0 can be verified until the board arrives** —
-firmware for hardware you don't have is untestable, so we scaffold now and
-implement each milestone against the physical watch.
+hardware. Board-specific milestones (M1+) are implemented and verified against
+a physical watch; the board-agnostic work below is done and tested up front.
 
 ## Status legend
 ✅ done · 🚧 in progress · ⬜ not started · 🧪 experimental
 
-## Ahead-of-hardware coding (board-agnostic, started)
-Work that doesn't need the watch in hand, being done during the restock wait:
+## Board-agnostic work (done)
+Work that does not require a physical board:
 - ✅ Shared BLE contract — [`docs/PROTOCOL.md`](PROTOCOL.md)
 - ✅ iOS companion app — BLE manager, HealthKit writer, tabbed UI, **settings**
   (config push), **weather** (Open-Meteo → watch), **TOTP authenticator**
@@ -20,10 +19,9 @@ Work that doesn't need the watch in hand, being done during the restock wait:
 
 ## M0 — Planning & scaffold ✅
 - ✅ Research (iPhone BLE services, prior art, hardware trade-offs, battery)
-- ✅ Constraint-driven board + framework decisions documented
+- ✅ Board + framework decisions documented
 - ✅ Repo, docs, license
-- ⬜ Buy a ready-made watch board — **awaiting restock** of the LILYGO T-Watch
-  S3 or Waveshare AMOLED 2.06 (both out of stock in India, Aug 2026)
+- ⬜ Obtain an ESP32-S3 watch board (see [`HARDWARE.md`](HARDWARE.md))
 
 ## M1 — First light ⬜
 Goal: flash the board over USB-C, prove the toolchain, draw something.
@@ -54,7 +52,7 @@ Goal: the whole reason this exists.
 - *Test:* control Apple Music / Spotify from the wrist.
 
 ## M5 — Companion iOS app + OTA ⬜
-Goal: your own sideloaded app, and wireless upgrades.
+Goal: the companion-app BLE link and wireless upgrades.
 - SwiftUI + CoreBluetooth app connects to the watch's custom `ble_ow` profile
 - **BLE-OTA:** push a new firmware `.bin` from the app to the watch
 - **WiFi-OTA** fallback: watch pulls a `.bin` over WiFi
@@ -73,7 +71,7 @@ Goal: your own sideloaded app, and wireless upgrades.
 - *Test:* weather shows on the watch.
 
 ## M9 — Free extras (no added hardware) ⬜
-Pure-firmware features using hardware the T-Watch S3 already has (touch LCD,
+Pure-firmware features using hardware the board already has (touch display,
 IMU, mic, speaker, haptic, WiFi, BLE, RTC). Independent — build in any order.
 
 **Phone tricks (BLE):**
@@ -111,14 +109,13 @@ Authenticator for the same secret; find-my-phone rings the phone.
 - Charging screen
 - *Optional:* Qi wireless-charging coil mod (hardware)
 
-## Backlog / maybe-never (YAGNI until asked)
+## Backlog (YAGNI until needed)
 - On-watch third-party app model (ESP-Brookesia)
 - Optical HR hardware add-on
-- nRF52 hardware respin if battery-weeks ever outranks WiFi + India convenience
+- nRF52 hardware fork for longest battery (WiFi-free)
 
 ---
 
 ### Next action
-**Awaiting restock** of a ready-made watch board (LILYGO T-Watch S3 or Waveshare
-AMOLED 2.06 — see [`HARDWARE.md`](HARDWARE.md)). Once one is in hand, start M1 —
-the `firmware/` directory holds the scaffold and setup notes.
+Obtain an ESP32-S3 watch board (see [`HARDWARE.md`](HARDWARE.md)) and start M1;
+the `firmware/` directory holds the project scaffold and setup notes.

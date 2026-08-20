@@ -1,0 +1,33 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  firmware-core:
+    name: Firmware core tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run core host tests
+        run: make -C firmware test CC=gcc
+
+  ios-app:
+    name: iOS app tests
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install XcodeGen
+        run: brew install xcodegen
+      - name: Generate project
+        working-directory: app
+        run: xcodegen
+      - name: Run tests
+        working-directory: app
+        run: |
+          UDID=$(xcrun simctl list devices available | grep -m1 'iPhone' | grep -oE '[0-9A-Fa-f-]{36}')
+          echo "Using simulator $UDID"
+          xcodebuild -project OpenWrist.xcodeproj -scheme OpenWrist \
+            -destination "id=$UDID" test CODE_SIGNING_ALLOWED=NO

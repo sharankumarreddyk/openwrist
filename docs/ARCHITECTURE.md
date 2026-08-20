@@ -11,7 +11,7 @@
    │                           │                        │               │
    │  ┌─────────────────────┐  │  custom BLE profile:   │               │
    │  │ OpenWrist app        │◄─┼───────────────────────┤               │
-   │  │ (you build+sideload) │  │  steps/HR → HealthKit  │               │
+   │  │ (sideloaded)         │  │  steps/HR → HealthKit  │               │
    │  │ SwiftUI · CoreBT ·   │  │  weather/config → watch│               │
    │  │ HealthKit            │  │  OTA trigger + push    │               │
    │  └─────────────────────┘  │                        └───────┬───────┘
@@ -22,7 +22,7 @@
 Two BLE relationships on one bonded link:
 1. **Watch as client of iOS** — consumes ANCS/CTS/AMS. Works even if the
    companion app is closed.
-2. **Watch ↔ your companion app** — a custom GATT profile for things iOS
+2. **Watch ↔ companion app** — a custom GATT profile for things iOS
    won't do natively: health data into HealthKit, config/weather down to the
    watch, and OTA update triggering.
 
@@ -74,7 +74,7 @@ different watch) is a good structural model for the BLE + HealthKit plumbing.
 
 ## Power {#power}
 
-**No always-on** (your call — and the right one for battery). The display is
+**No always-on** (a deliberate choice for battery). The display is
 off between interactions; the watch wakes on wrist-raise or touch.
 
 | State | CPU | Display | BLE | Rough draw |

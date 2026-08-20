@@ -1,82 +1,112 @@
-# OpenWrist — an open ESP32 smartwatch for iPhone
+# OpenWrist
 
-A DIY smartwatch built on a LILYGO T-Watch S3 (ESP32-S3) that pairs with an
-iPhone over Bluetooth LE, backed by a **self-built iOS companion app** you
-sideload to your own phone (free Apple ID). It reads notifications, calls,
-time, and music from iOS using Apple's built-in BLE services, and syncs
-health/config through the companion app.
+[![CI](https://github.com/sharankumarreddyk/openwrist/actions/workflows/ci.yml/badge.svg)](https://github.com/sharankumarreddyk/openwrist/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-> Status: **planning + scaffold**. Hardware not yet purchased. See
-> [`docs/ROADMAP.md`](docs/ROADMAP.md) for what's built and what's next.
+An open-source ESP32 smartwatch for iPhone. The watch pairs over Bluetooth LE
+and reads notifications, calls, time, and music from iOS using Apple's built-in
+BLE services — **no App Store, no paid developer account**. A companion iOS app
+(sideloaded with a free Apple ID) adds Apple Health sync, weather, config, and
+wireless firmware updates.
 
-## Why this works
+> **Status:** the hardware-independent parts are implemented and tested — the
+> BLE protocol, the firmware's portable core (packet codec, TOTP, pedometer),
+> and the companion iOS app (settings, weather, authenticator). On-device
+> bring-up (display, sensors, the BLE stack) begins once a board is in hand.
+> See [`docs/ROADMAP.md`](docs/ROADMAP.md).
 
-**Basics with no app** — iOS ships three standard BLE services any bonded
-device may consume:
+## Why it works
+
+**Core features need no app** — iOS exposes three standard BLE services that any
+bonded device may consume:
 
 | Service | What the watch gets |
 |---------|---------------------|
 | **ANCS** | Every notification + incoming-call caller ID and actions |
-| **CTS** | Wall-clock time, auto-synced (no manual setting, handles DST) |
+| **CTS** | Wall-clock time, auto-synced (handles DST) |
 | **AMS** | Now-playing track/artist + play/pause/skip control |
 
-**Everything else via your companion app** — since you'll sideload your own
-iOS app (free Apple ID, 7-day re-sign), it bridges what ANCS can't:
-- Push step/HR data **into Apple Health** (HealthKit is app-only)
-- Send weather, config, and watch-face settings to the watch over BLE
-- Trigger **OTA firmware updates** so you flash new builds wirelessly
+**Everything else via the companion app** — a self-signed iOS app bridges what
+ANCS can't: step/HR data **into Apple Health** (HealthKit is app-only), weather
+and config **down to the watch**, and **OTA firmware updates**.
 
-## Features (planned)
+## Features
 
-- 🔔 iPhone notifications + caller ID (ANCS)
-- 🕐 Auto time sync + multiple watch faces (CTS) — **tap/tilt-to-wake**, no always-on
-- 🎵 Music control from the wrist (AMS)
-- 👟 Step counting via the onboard IMU → synced to Apple Health via the app
-- ❤️ Heart rate — *not on this board*; experimental if added later
-- 🌤️ Weather + config pushed from the companion app (or WiFi directly)
-- ⬆️ OTA updates over WiFi or BLE — upgrade the watch whenever you build something
-- 🔋 Multi-day battery (no always-on) — see below
+Planned:
+- 🔔 Notifications + caller ID (ANCS)
+- 🕐 Auto time sync + watch faces (CTS), tap/tilt-to-wake
+- 🎵 Music control (AMS)
+- 👟 Step counting (IMU) → Apple Health via the app
+- 🌤️ Weather + config from the companion app
+- ⬆️ OTA updates over WiFi or BLE
+- 🔋 Multi-day battery (no always-on)
 
-**Free extras** (no added hardware — pure firmware on parts already on the board):
-- 📷 Camera shutter remote for the iPhone (BLE HID) · 📵 find my phone · 🎞️ presenter remote
-- 🔐 TOTP 2FA authenticator — offline codes, works for Microsoft/Google/GitHub/AWS
-  accounts (code mode; not push-approval or passkeys)
-- 🏃 Sleep tracking, fall detection, workout auto-detect, gesture controls (IMU)
-- 🌐 World clock, stock/crypto/news tickers, smart-home remote (WiFi)
-- 🧰 Timer, stopwatch, alarms, calculator, bubble level, flashlight, converter, a game
+Free extras (pure firmware, no added hardware):
+- 📷 Camera-shutter remote (BLE HID) · 📵 find my phone · 🎞️ presenter remote
+- 🔐 TOTP 2FA authenticator — offline codes (Microsoft/Google/GitHub/AWS in code mode)
+- 🏃 Sleep tracking, fall detection, gesture controls (IMU)
+- 🌐 World clock, tickers, smart-home remote (WiFi)
+- 🧰 Timer, stopwatch, alarms, calculator, bubble level, flashlight, a game
 
 Health sensing is deliberately *secondary* — the focus is the phone-companion
-experience: notifications, time, music, glanceable info.
+experience.
 
-## Battery
+## Repository layout
 
-You dropped always-on, which removes the biggest drain. With tap/tilt-to-wake,
-light-sleep between wakes, and low-duty BLE, **multi-day battery is realistic**
-on the T-Watch S3. Honest note: it's still an ESP32 with WiFi — expect days,
-not the weeks an nRF52 watch would give. See
-[`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md#power).
+```
+openwrist/
+├── app/          iOS companion app (SwiftUI · CoreBluetooth · HealthKit)
+├── firmware/     ESP32 firmware — portable core/ (tested) + board layers (WIP)
+├── docs/         protocol, architecture, hardware, research, roadmap
+└── .github/      CI and contribution templates
+```
+
+## Quickstart
+
+**Firmware core tests** (portable C, no ESP-IDF needed):
+```bash
+make -C firmware test
+```
+
+**iOS app** (macOS + Xcode):
+```bash
+brew install xcodegen
+cd app && xcodegen && open OpenWrist.xcodeproj      # build & run in the simulator
+```
+
+**iOS app tests:**
+```bash
+cd app && xcodegen
+xcodebuild -project OpenWrist.xcodeproj -scheme OpenWrist \
+  -destination 'platform=iOS Simulator,name=iPhone 17' test CODE_SIGNING_ALLOWED=NO
+```
 
 ## Hardware
 
-**LILYGO T-Watch S3** — ESP32-S3, USB-C charging, WiFi + BLE, capacitive
-touch, IMU, speaker/mic, strap included. **Available in India via Robu.in**
-(official LILYGO distributor). Optional Qi wireless-charging mod documented.
-Full rationale, alternatives, and BOM in [`docs/HARDWARE.md`](docs/HARDWARE.md).
+Any ESP32-S3 watch board with a touch display, IMU, WiFi/BLE, and USB-C works —
+the reference target is the LILYGO T-Watch S3 or the Waveshare
+ESP32-S3-Touch-AMOLED-2.06. Board options, trade-offs, and the BOM are in
+[`docs/HARDWARE.md`](docs/HARDWARE.md).
 
-## Firmware + app stack
+## Stack
 
-- **Watch:** ESP-IDF + ESP-Brookesia (Espressif's smartwatch HMI framework) + LVGL.
-- **Phone:** a SwiftUI + CoreBluetooth + HealthKit companion app, sideloaded.
+- **Watch:** ESP-IDF + ESP-Brookesia + LVGL
+- **App:** SwiftUI + CoreBluetooth + HealthKit
 
-Rationale in [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
+## Documentation
 
-## Docs
+- [`docs/PROTOCOL.md`](docs/PROTOCOL.md) — the `ble_ow` BLE contract
+- [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — system, firmware, and app design
+- [`docs/HARDWARE.md`](docs/HARDWARE.md) — board options and BOM
+- [`docs/RESEARCH.md`](docs/RESEARCH.md) — prior art and design rationale
+- [`docs/ROADMAP.md`](docs/ROADMAP.md) — milestones and status
 
-- [`docs/RESEARCH.md`](docs/RESEARCH.md) — deep research, prior art, BLE services, hardware trade-offs
-- [`docs/HARDWARE.md`](docs/HARDWARE.md) — board choice, charging, OTA, India sourcing
-- [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — system + firmware + app design, power strategy
-- [`docs/ROADMAP.md`](docs/ROADMAP.md) — milestones, current status
+## Contributing
+
+Contributions welcome — see [`CONTRIBUTING.md`](CONTRIBUTING.md) and the
+[code of conduct](CODE_OF_CONDUCT.md). Security reports:
+[`SECURITY.md`](SECURITY.md).
 
 ## License
 
-MIT — see [`LICENSE`](LICENSE).
+[MIT](LICENSE).
